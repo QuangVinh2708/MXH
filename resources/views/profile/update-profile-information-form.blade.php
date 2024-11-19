@@ -8,7 +8,24 @@
     </x-slot>
 
     <x-slot name="form">
+
+            <!-- Profile Photo -->
+            <div class="col-span-6 sm:col-span-4">
+                <x-jet-label for="photo" value="{{ __('Ảnh đại diện') }}" />
+                <input id="photo" type="file" class="mt-1 block w-full" wire:model="photo" accept="image/*">
+                <x-jet-input-error for="photo" class="mt-2" />
+
+                <!-- Hiển thị ảnh hiện tại hoặc ảnh tải lên -->
+                @if ($photo)
+                    <img src="{{ $photo->temporaryUrl() }}" alt="Avatar Preview" class="rounded-full h-20 w-20 mt-2">
+                @elseif (Auth::user()->profile_photo_path)
+                <img src="{{ asset('storage/' . Auth::user()->profile_photo_path) }}" alt="Avatar" class="rounded-full h-20 w-20">
+                @endif
+            </div>
+
+
         <!-- Name -->
+        
         <div class="col-span-6 sm:col-span-4">
             <x-jet-label for="name" value="{{ __('Tên người dùng') }}" />
             <x-jet-input id="name" type="text" class="mt-1 block w-full" wire:model.defer="state.name" autocomplete="name" />

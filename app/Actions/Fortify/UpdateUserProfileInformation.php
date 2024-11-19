@@ -24,13 +24,14 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'is_private' => ['required', 'in:0,1'],
-            'photo' => ['nullable', 'mimes:jpg,jpeg,png', 'max:1024'],
+            'photo' => ['nullable', 'mimes:jpg,jpeg,png', 'max:1024'], // Xác thực ảnh đại diện
         ])->validateWithBag('updateProfileInformation');
-
+    
         if (isset($input['photo'])) {
+            // Xử lý lưu ảnh đại diện
             $user->updateProfilePhoto($input['photo']);
         }
-
+    
         if ($input['email'] !== $user->email &&
             $user instanceof MustVerifyEmail) {
             $this->updateVerifiedUser($user, $input);
@@ -43,6 +44,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             ])->save();
         }
     }
+    
 
     /**
      * Update the given verified user's profile information.

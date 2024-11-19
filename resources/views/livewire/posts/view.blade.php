@@ -21,30 +21,29 @@
   <span class="block sm:inline text-center">{{ session()->get('error') }}</span>
 </div>
 @endif
-	@forelse($posts as $post)
-
-      @include('elements.post')
-
-    @empty
-        <div class="flex flex-col mx-2 my-12 md:mx-32 lg:my-28 lg:mx-60">
-            <div class="bg-white shadow-md rounded-3xl p-4">
-                <div class="flex-none">
-                    <div class=" h-full w-full mb-3">
-                        <img src="{{ asset('images/no-posts.png') }}"
-                            alt="Just a flower" class="w-full object-scale-down md:object-cover lg:object-cover  rounded-2xl">
-                    </div>
-                    <div class="flex-auto ml-3 justify-evenly py-2">
-                        <div class="flex flex-wrap ">
-
-                            <h2 class="flex-auto text-lg text-center font-medium">{{ __('No Posts found..!!!') }}</h2>
-                        </div>
-                        <p class="mt-3"></p>
-
-                    </div>
+@forelse($posts as $post)
+@if($post->is_approved)  <!-- Kiểm tra nếu bài viết đã được duyệt -->
+    @include('elements.post')
+@endif
+@empty
+<div class="flex flex-col mx-2 my-12 md:mx-32 lg:my-28 lg:mx-60">
+    <div class="bg-white shadow-md rounded-3xl p-4">
+        <div class="flex-none">
+            <div class=" h-full w-full mb-3">
+                <img src="{{ asset('images/no-posts.png') }}"
+                    alt="Just a flower" class="w-full object-scale-down md:object-cover lg:object-cover rounded-2xl">
+            </div>
+            <div class="flex-auto ml-3 justify-evenly py-2">
+                <div class="flex flex-wrap ">
+                    <h2 class="flex-auto text-lg text-center font-medium">{{ __('No Posts found..!!!') }}</h2>
                 </div>
+                <p class="mt-3"></p>
             </div>
         </div>
-        @endforelse
+    </div>
+</div>
+@endforelse
+
 
         <div class="py-4 mb-2">
 	        {{ $posts->links() }}

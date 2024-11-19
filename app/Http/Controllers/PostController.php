@@ -18,11 +18,18 @@ class PostController extends Controller
      * @return Application|Factory|View
      */
     public function index()
-    {
-        // Lấy bài viết của người dùng hiện tại và eager load quan hệ 'user'
-        $posts = Post::with('user')->where('user_id', auth()->id())->paginate(10);
-        return view('post.manage', compact('posts'));
-    }
+{
+    // Nếu là admin, lấy tất cả bài viết (bao gồm chưa duyệt)
+    // Nếu không phải admin, chỉ lấy bài viết đã duyệt
+    $posts = Post::with('user')
+                 ->where('is_approved', true) // Lọc bài viết đã duyệt
+                 ->where('user_id', auth()->id()) // Lọc theo user hiện tại
+                 ->paginate(10);
+    
+    return view('post.manage', compact('posts'));
+}
+
+    
     
     /**
      * Display the followers' posts.
@@ -31,9 +38,17 @@ class PostController extends Controller
      */
     public function followers(): Application|Factory|View
     {
-        return view('post.followers');
+        // Lấy danh sách các người dùng mà người dùng hiện tại đang theo dõi
+        $followings = Auth::user()->followings()->pluck('following_id'); 
+    
+        // Lấy các bài viết của những người mà người dùng hiện tại theo dõi
+        $posts = Post::with('user')
+                     ->whereIn('user_id', $followings) // Lọc bài viết của những người theo dõi
+                     ->paginate(10); // Phân trang
+    
+        return view('post.followers', compact('posts'));
     }
-
+    
     /**
      * Show the form for creating a new post.
      *
@@ -70,18 +85,19 @@ class PostController extends Controller
      * @param Post $post
      * @return Application|Factory|View
      */
-        public function show(Post $post)
+    public function show(Post $post)
     {
         // Lấy bài viết cùng với các media liên quan
         $post->load('media');
-
+    
         // Kiểm tra nếu bài viết chưa được duyệt và người dùng không phải là admin
         if (!$post->is_approved && !Auth::user()->isAdmin()) {
             abort(403, 'Bài viết chưa được duyệt.');
         }
-
+    
         return view('post.show', compact('post'));
     }
+    
 
 
     /**
@@ -128,8 +144,9 @@ class PostController extends Controller
      */
     public function approve(Post $post)
     {
+        // Kiểm tra quyền admin
         if (auth()->user()->isAdmin()) {
-            $post->is_approved = true;
+            $post->is_approved = true; // Đánh dấu bài viết là đã được duyệt
             $post->save();
     
             return redirect()->route('admin.posts.index')->with('message', 'Bài viết đã được duyệt.');
@@ -137,5 +154,6 @@ class PostController extends Controller
     
         abort(403, 'Bạn không có quyền truy cập.');
     }
+    
     
 }

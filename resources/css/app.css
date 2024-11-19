@@ -1,3 +1,48 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+/* Nền thanh điều hướng */
+nav {
+    background-color: #CFE1B9;
+}
+
+/* Các mục điều hướng */
+nav a {
+    color: #728156; /* Màu chữ chính */
+    background-color: #B6C99B; /* Nền */
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+/* Mục điều hướng đang chọn */
+nav a.active {
+    background-color: #728156;
+    color: #FFFFFF; /* Màu chữ trắng */
+}
+
+/* Hover mục điều hướng */
+nav a:hover {
+    background-color: #98A77C;
+    color: #FFFFFF;
+}
+
+/* Dropdown menu */
+nav .dropdown {
+    background-color: #88976C;
+}
+
+nav .dropdown a:hover {
+    background-color: #98A77C;
+}
+
+/* Ảnh đại diện */
+nav img {
+    border: 2px solid #728156;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+nav img:hover {
+    transform: scale(1.1); /* Phóng to nhẹ khi hover */
+}

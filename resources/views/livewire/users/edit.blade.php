@@ -8,7 +8,7 @@
 
         <form method="POST" action="{{ route('register') }}" wire:submit.prevent="submit">
             @csrf
-
+            
             <div>
                 <x-jet-label for="name" value="{{ __('Họ và tên ') }}" />
                 <x-jet-input id="name" class="block mt-1 w-full" type="text" name="name" wire:model.lazy="name" />

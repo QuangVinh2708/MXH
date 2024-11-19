@@ -16,6 +16,7 @@ class Create extends Component
     public $title;
     public $body;
     public $file;
+    public $filePreview = null; // Thêm thuộc tính xem trước file
     public $location;
     public $linkPreview = null;
 
@@ -37,6 +38,16 @@ class Create extends Component
     public function updatedBody()
     {
         $this->detectLink();
+    }
+
+    public function updatedFile()
+    {
+        // Kiểm tra xem file có phải hình ảnh không
+        if ($this->file && $this->file->getMimeType()) {
+            $this->filePreview = $this->file->temporaryUrl(); // Tạo URL tạm thời cho xem trước
+        } else {
+            $this->filePreview = null;
+        }
     }
 
     public function detectLink()

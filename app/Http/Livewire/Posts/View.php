@@ -31,6 +31,8 @@ class View extends Component
     public $isOpenCommentModal = false;
 
     public $isOpenDeletePostModal = false;
+    public $parentCommentId = null;
+    public $replyingToUsername = null; // Username của người đang được phản hồi
 
     public function mount($type = null)
     {
@@ -45,33 +47,33 @@ class View extends Component
     }
 
     public function incrementLike(Post $post)
-    {
-        $like = Like::where('user_id', Auth::id())
-            ->where('post_id', $post->id);
+{
+    $like = Like::where('user_id', Auth::id())->where('post_id', $post->id);
 
-        if (! $like->count()) {
-            $new = Like::create([
-                'post_id' => $post->id,
-                'user_id' => Auth::id(),
-            ]);
-
-            return true;
-        }
+    if ($like->exists()) {
         $like->delete();
+    } else {
+        Like::create([
+            'post_id' => $post->id,
+            'user_id' => Auth::id(),
+        ]);
     }
 
-    public function comments($post)
+    // Phát sóng sự kiện cập nhật để cập nhật lại giao diện
+    $this->emit('postLiked', $post->id);
+}
+
+
+        public function comments($post)
     {
-        $post = Post::with(['comments.user' => function ($query) {
-            $query->select('id', 'name');
-        },
-        ])->find($post);
+        $post = Post::with(['comments.user'])->find($post);
         $this->postId = $post->id;
         $this->resetValidation('comment');
         $this->isOpenCommentModal = true;
         $this->setComments($post);
         return true;
     }
+
 
     /**
      * The attributes that are mass assignable.
@@ -84,27 +86,50 @@ class View extends Component
             ['comment' => $this->comment],
             ['comment' => 'required|max:5000']
         )->validate();
-
+    
         Comment::create([
             'user_id' => Auth::id(),
             'post_id' => $post->id,
-            'comment' => $validatedData['comment'],
+            'comment' => $validatedData['comment'], // Lưu toàn bộ nội dung bình luận bao gồm @username
+            'parent_id' => $this->parentCommentId, // Gán ID bình luận cha nếu có
         ]);
-
-        session()->flash('comment.success', 'Comment created successfully');
-
-        $this->setComments($post);
+    
+        // Reset trạng thái sau khi đăng bình luận
         $this->comment = '';
-
-        //$this->isOpenCommentModal = false;
-        return redirect()->back();
+        $this->parentCommentId = null;
+        $this->replyingToUsername = null;
+    
+        // Cập nhật danh sách bình luận
+        $this->setComments($post);
     }
+    
+
+    
+    public function replyToComment($commentId)
+    {
+        $comment = Comment::find($commentId);
+
+        if ($comment) {
+            $this->replyingToUsername = '@' . $comment->user->username; // Gán username vào thuộc tính
+            $this->parentCommentId = $commentId; // Gán ID bình luận cha
+            $this->comment = $this->replyingToUsername . ' '; // Đặt @username làm nội dung mặc định
+        }
+    }
+
 
     public function setComments($post)
     {
-        $this->comments = $post->comments;
-        return true;
+        // Eager load quan hệ 'user' để tránh lazy loading
+        $this->comments = $post->comments()
+            ->whereNull('parent_id') // Lọc các bình luận chính (không phải reply)
+            ->with(['user', 'replies.user']) // Tải trước thông tin user và replies
+            ->latest()
+            ->get();
     }
+    
+    
+    
+
 
     public function showDeletePostModal(Post $post)
     {
@@ -119,9 +144,9 @@ class View extends Component
         if ($response->allowed()) {
             try {
                 $post->delete();
-                session()->flash('success', 'Post deleted successfully');
+                session()->flash('success', 'Bài viết đã xóa');
             } catch (Exception $e) {
-                session()->flash('error', 'Cannot delete post');
+                session()->flash('error', 'Không thể xóa bài viết');
             }
         } else {
             session()->flash('error', $response->message());
@@ -137,7 +162,7 @@ class View extends Component
         if ($response->allowed()) {
             $comment->delete();
             $this->isOpenCommentModal = false;
-            session()->flash('success', 'Comment deleted successfully');
+            session()->flash('success', 'Bình luận đã xóa');
         } else {
             session()->flash('comment.error', $response->message());
         }
@@ -146,25 +171,28 @@ class View extends Component
     }
 
     private function setQuery()
-{
-    if (!empty($this->queryType) && $this->queryType === 'me') {
-        // Lấy tất cả bài viết của người dùng hiện tại và tải trước quan hệ `user`
-        $posts = Post::with(['user', 'userLikes', 'postImages'])
-            ->withCount(['likes', 'comments'])
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->paginate(10);
-    } else {
-        // Chỉ hiển thị các bài đã được duyệt và tải trước quan hệ `user`
-        $posts = Post::with(['user', 'userLikes', 'postImages'])
-            ->withCount(['likes', 'comments'])
-            ->where('is_approved', true)
-            ->latest()
-            ->paginate(10);
+    {
+        if (! empty($this->queryType) && $this->queryType === 'me') {
+            $posts = Post::withCount(['likes', 'comments'])->where('user_id', Auth::id())->with(['userLikes', 'postImages', 'user' => function ($query) {
+                $query->select(['id', 'name', 'username', 'profile_photo_path']);
+            },
+            ])->latest()->paginate(10);
+        } elseif (! empty($this->queryType) && $this->queryType === 'followers') {
+            $userIds = Auth::user()->followings()->pluck('follower_id');
+            $userIds[] = Auth::id();
+            $posts = Post::withCount(['likes', 'comments'])->whereIn('user_id', $userIds)->with(['userLikes', 'postImages', 'user' => function ($query) {
+                $query->select(['id', 'name', 'username', 'profile_photo_path']);
+            },
+            ])->latest()->paginate(10);
+        } else {
+            $posts = Post::withCount(['likes', 'comments'])->with(['userLikes', 'postImages', 'user' => function ($query) {
+                $query->select(['id', 'name', 'username', 'profile_photo_path']);
+            },
+            ])->latest()->paginate(10);
+        }
+
+        return $posts;
     }
 
-    return $posts;
-}
 
-    
 }

@@ -32,7 +32,7 @@
         
         <!-- Nút quay lại -->
         <div class="text-right">
-            <a href="{{ route('posts.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg transition duration-300">
+            <a href="{{ route('admin.posts.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg transition duration-300">
                 Quay lại danh sách
             </a>
         </div>

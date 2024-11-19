@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Nội dung') }}
+            {{ __('Bài viết của bạn ') }}
         </h2>
     </x-slot>
 <div class="container px-3 mx-auto grid bg-gray-100">
