@@ -16,6 +16,7 @@ class Create extends Component
     public $title;
     public $body;
     public $file;
+    
     public $filePreview = null; // Thêm thuộc tính xem trước file
     public $location;
     public $linkPreview = null;
